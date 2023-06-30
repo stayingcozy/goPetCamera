@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/pion/webrtc/v3"
 
@@ -14,12 +15,13 @@ func AnswerCall(
 	client *firestore.Client,
 	uid string, callId string,
 	ctx context.Context,
-	peerConnection *webrtc.PeerConnection) {
+	peerConnection *webrtc.PeerConnection) { // callsId string
 
 
 
 	// get call doc
 	var callRef = client.Collection("users").Doc(uid).Collection("calls").Doc(callId)
+	// var callRef = client.Collection("users").Doc(uid).Collection("calls").Doc(callsId).Collection("call").Doc(callId)
 	fmt.Println("call ref id: ")
 	fmt.Println(callId)
 
@@ -37,18 +39,16 @@ func AnswerCall(
 
 	// Register the onICECandidate event handler
 	peerConnection.OnICECandidate(func(event *webrtc.ICECandidate) {
-		fmt.Println("\n OnCandidate triggered")
-		fmt.Println(event)
 		// onICECandidateJS(peerConnection, event, ctx)
 		if event != nil {
 			candidateJSON := event.ToJSON()
-			fmt.Println("CandidateJSON")
+			// fmt.Println("CandidateJSON")
 			// fmt.Println(candidateJSON)
 
 			// Accessing individual fields
-			fmt.Println("Candidate:", candidateJSON.Candidate)
-			fmt.Println("SDPMid:", *candidateJSON.SDPMid)
-			fmt.Println("SDPMLineIndex:", *candidateJSON.SDPMLineIndex)
+			// fmt.Println("Candidate:", candidateJSON.Candidate)
+			// fmt.Println("SDPMid:", *candidateJSON.SDPMid)
+			// fmt.Println("SDPMLineIndex:", *candidateJSON.SDPMLineIndex)
 
 			// answercandidateFB := AnswerCandidateFB{
 			// 	Candidate: candidateJSON.Candidate,
@@ -59,14 +59,15 @@ func AnswerCall(
 			// fmt.Println("SDPMid:", answercandidateFB.SDPMid)
 			// fmt.Println("SDPMLineIndex:", answercandidateFB.SDPMLineIndex)
 			
+			// Convert to readable format on Firebase for User on WebRTC js side to process
 			answercandidateFB := AnswerCandidateFB{
 				Candidate: candidateJSON.Candidate,
 				SDPMLineIndex: int64(*candidateJSON.SDPMLineIndex),
-				SDPMid: "0",
+				SDPMid: strconv.Itoa(int(*candidateJSON.SDPMLineIndex)), // value is blank, so use SDPMLineIndex for now
 			}
-			fmt.Println("Candidate:", answercandidateFB.Candidate)
-			fmt.Println("SDPMid:", answercandidateFB.SDPMLineIndex)
-			fmt.Println("SDPMLineIndex:", answercandidateFB.SDPMid)
+			// fmt.Println("Candidate:", answercandidateFB.Candidate)
+			// fmt.Println("SDPMid:", answercandidateFB.SDPMLineIndex)
+			// fmt.Println("SDPMLineIndex:", answercandidateFB.SDPMid)
 
 			// setDoc(answerCandidates, candidateJSON)
 
@@ -111,7 +112,7 @@ func AnswerCall(
 				SDP:  sdpStrValue,
 			}
 
-			fmt.Println(webrtc.SDPTypeOffer)
+			// fmt.Println(webrtc.SDPTypeOffer)
 			// fmt.Println(sdpStrValue)
 
 			// if err = peerConnection.SetRemoteDescription(offer); err != nil {
