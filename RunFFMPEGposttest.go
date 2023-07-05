@@ -8,12 +8,12 @@ import (
 	"os/exec"
 )
 
-func RunFFMPEGpost() {
+func RunFFMPEGposttest() {
 	url := "http://localhost:3030/upload" // Replace with the URL of your Node.js server
 	const imageBytes int = 640 * 480      // image H x W x Color Channels = # of bytes in image
 
 	// Execute the ffmpeg command to capture images
-	cmd := exec.Command("ffmpeg", "-re", "-i", "/dev/video0", "-vf", "fps=2", "-f", "image2pipe", "-")
+	cmd := exec.Command("ffmpeg", "-re", "-f", "lavfi", "-i", "testsrc=size=640x480", "-vf", "fps=2", "-f", "image2pipe", "-")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		fmt.Println("Error creating stdout pipe:", err)
