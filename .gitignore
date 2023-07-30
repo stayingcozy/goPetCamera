@@ -1,2 +1,3 @@
 *.exe
 *main
+*node_modules
