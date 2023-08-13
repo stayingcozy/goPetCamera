@@ -16,7 +16,7 @@ func AnswerSubscriber(
 	uid string, callId string,
 	ctx context.Context,
 	peerConnectionConfig webrtc.Configuration,
-	localTrack *webrtc.TrackLocalStaticRTP ) { // callsId string
+	localTrack *webrtc.TrackLocalStaticRTP) { // callsId string
 
 	peerConnection, err := webrtc.NewPeerConnection(peerConnectionConfig)
 	if err != nil {
@@ -93,12 +93,12 @@ func AnswerSubscriber(
 			// fmt.Println("Candidate:", answercandidateFB.Candidate)
 			// fmt.Println("SDPMid:", answercandidateFB.SDPMid)
 			// fmt.Println("SDPMLineIndex:", answercandidateFB.SDPMLineIndex)
-			
+
 			// Convert to readable format on Firebase for User on WebRTC js side to process
 			answercandidateFB := AnswerCandidateFB{
-				Candidate: candidateJSON.Candidate,
+				Candidate:     candidateJSON.Candidate,
 				SDPMLineIndex: int64(*candidateJSON.SDPMLineIndex),
-				SDPMid: strconv.Itoa(int(*candidateJSON.SDPMLineIndex)), // value is blank, so use SDPMLineIndex for now
+				SDPMid:        strconv.Itoa(int(*candidateJSON.SDPMLineIndex)), // value is blank, so use SDPMLineIndex for now
 			}
 			// fmt.Println("Candidate:", answercandidateFB.Candidate)
 			// fmt.Println("SDPMid:", answercandidateFB.SDPMLineIndex)
@@ -113,13 +113,13 @@ func AnswerSubscriber(
 
 			_, err := answerCandidates.Set(ctx, answercandidateFB)
 			if err != nil {
-					// Handle any errors in an appropriate way, such as returning them.
-					log.Printf("An error has occurred: %s", err)
+				// Handle any errors in an appropriate way, such as returning them.
+				log.Printf("An error has occurred: %s", err)
 			}
 
 			// log.Printf("Created document with ID: %s", newDocRef.ID)
-				
-			}
+
+		}
 	})
 
 	// Stop code until doc snap is taken of fb doc
@@ -158,54 +158,6 @@ func AnswerSubscriber(
 			fmt.Println("Ending setRemoteDescription")
 
 			/////////
-			// Add offerCandidates to RTCIceCandidate
-			fmt.Println("\nChecking docs in offerCandidates....")
-			oCit := callRef.Collection("offerCandidates").Snapshots(ctx)
-			for {
-				snap, err := oCit.Next()
-				if err != nil {
-					panic(err)
-				}
-				if snap != nil {
-					for _, change := range snap.Changes {
-						switch change.Kind {
-						case firestore.DocumentAdded:
-							oCdata := change.Doc.Data()
-							var candidate string = oCdata["candidate"].(string)
-							var sdpMid string = oCdata["sdpMid"].(string)
-							var sdpMLineIndex uint16 = uint16(oCdata["sdpMLineIndex"].(int64))
-
-							fmt.Println("\n Here is the candidate after import from fb")
-							fmt.Println(candidate)
-							fmt.Println("\n Here is the sdpMid after import from fb")
-							fmt.Println(sdpMid)
-							fmt.Println("\n Here is the sdpMLineIndex after import from fb")
-							fmt.Println(sdpMLineIndex)
-
-
-							// If candidate && sdpMid && sdpMLineIndex exist then add ICE
-							if (candidate != "") {
-								fmt.Println("adding ICE")
-								ICEcandidate := webrtc.ICECandidateInit{
-									Candidate:     candidate, // Assuming the "candidate" field is a string
-									SDPMid:        &sdpMid,
-									SDPMLineIndex: &sdpMLineIndex,
-								}
-
-								err := peerConnection.AddICECandidate(ICEcandidate)
-								if err != nil {
-									panic(err)
-								}
-								fmt.Println("post ICE added")
-								break
-							}
-							candidate = ""
-						}
-					}
-					break
-				}
-			}
-			/////
 
 			// Create answer
 			answerDescription, err := peerConnection.CreateAnswer(nil)
@@ -244,6 +196,93 @@ func AnswerSubscriber(
 				// Handle any errors in an appropriate way, such as returning them.
 				log.Printf("An error has occurred: %s", Uerr)
 			}
+
+			/////////
+			// Add offerCandidates to RTCIceCandidate
+			fmt.Println("\nChecking docs in offerCandidates....")
+			oCit := callRef.Collection("offerCandidates").Snapshots(ctx)
+			for {
+				snap, err := oCit.Next()
+				if err != nil {
+					panic(err)
+				}
+				if snap != nil {
+					for _, change := range snap.Changes {
+						switch change.Kind {
+						case firestore.DocumentAdded:
+							oCdata := change.Doc.Data()
+							var candidate string = oCdata["candidate"].(string)
+							var sdpMid string = oCdata["sdpMid"].(string)
+							var sdpMLineIndex uint16 = uint16(oCdata["sdpMLineIndex"].(int64))
+
+							fmt.Println("\n Here is the candidate after import from fb")
+							fmt.Println(candidate)
+							fmt.Println("\n Here is the sdpMid after import from fb")
+							fmt.Println(sdpMid)
+							fmt.Println("\n Here is the sdpMLineIndex after import from fb")
+							fmt.Println(sdpMLineIndex)
+
+							// If candidate && sdpMid && sdpMLineIndex exist then add ICE
+							if candidate != "" {
+								fmt.Println("adding ICE")
+								ICEcandidate := webrtc.ICECandidateInit{
+									Candidate:     candidate, // Assuming the "candidate" field is a string
+									SDPMid:        &sdpMid,
+									SDPMLineIndex: &sdpMLineIndex,
+								}
+
+								err := peerConnection.AddICECandidate(ICEcandidate)
+								if err != nil {
+									panic(err)
+								}
+								fmt.Println("post ICE added")
+								break
+							}
+							candidate = ""
+						}
+					}
+					break
+				}
+			}
+			/////
+
+			// // Create answer
+			// answerDescription, err := peerConnection.CreateAnswer(nil)
+			// if err != nil {
+			// 	panic(err)
+			// }
+
+			// fmt.Println("Starting SetLocalDescription Promise")
+			// // Create channel that is blocked until ICE Gathering is complete
+			// // gatherCompleteLocal := webrtc.GatheringCompletePromise(peerConnection)
+
+			// // Sets the LocalDescription, and starts our UDP listeners
+			// if err = peerConnection.SetLocalDescription(answerDescription); err != nil {
+			// 	panic(err)
+			// }
+
+			// // Block until ICE Gathering is complete, disabling trickle ICE
+			// // we do this because we only can exchange one signaling message
+			// // in a production application you should exchange ICE Candidates via OnICECandidate
+			// // <-gatherCompleteLocal
+			// fmt.Println("Ending SetLocalDescription Promise")
+
+			// answer := Answer{
+			// 	Type: "answer",
+			// 	SDP:  answerDescription.SDP,
+			// }
+
+			// // callRef.Update(ctx, []firestore.Update{ { answer } })
+			// _, Uerr := callRef.Update(ctx, []firestore.Update{
+			// 	{
+			// 		Path:  "answer",
+			// 		Value: answer,
+			// 	},
+			// })
+			// if Uerr != nil {
+			// 	// Handle any errors in an appropriate way, such as returning them.
+			// 	log.Printf("An error has occurred: %s", Uerr)
+			// }
 		}
 	}
 }
