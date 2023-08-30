@@ -9,7 +9,8 @@ import (
 
 func RunFFMPEG() {
 	// Set up the command and arguments
-	cmd := exec.Command("ffmpeg", "-re", "-i", "/dev/video1", "-vcodec", "libvpx", "-cpu-used", "5", "-deadline", "1", "-g", "10", "-error-resilient", "1", "-auto-alt-ref", "1", "-f", "rtp", "rtp://127.0.0.1:5004?pkt_size=1200")
+	// cmd := exec.Command("ffmpeg", "-re", "-i", "/dev/video1", "-vcodec", "libvpx", "-cpu-used", "5", "-deadline", "1", "-g", "10", "-error-resilient", "1", "-auto-alt-ref", "1", "-f", "rtp", "rtp://127.0.0.1:5004?pkt_size=1200")
+	cmd := exec.Command("ffmpeg", "-re", "-i", "/dev/video1", "-s", "640x480", "-r", "30", "-vcodec", "libvpx", "-cpu-used", "5", "-deadline", "1", "-g", "10", "-error-resilient", "1", "-auto-alt-ref", "1", "-f", "rtp", "rtp://127.0.0.1:5004?pkt_size=1200")
 
 	// Set the output to the console
 	cmd.Stdout = os.Stdout
